@@ -1,7 +1,9 @@
+from unittest import skipIf
+
 from django.conf import settings
 from django.test import TestCase
 
-from pgcrypto_fields import aggregates, fields
+from pgcrypto_fields import aggregates, DJANGO_GTE_1_7, fields
 from .factories import EncryptedTextFieldModelFactory
 from .models import EncryptedTextFieldModel
 
@@ -105,3 +107,25 @@ class TestEncryptedTextFieldModel(TestCase):
         instance = queryset.get()
         self.assertEqual(instance.pgp_pub_field__pgppub, expected)
         self.assertEqual(instance.pgp_sym_field__pgpsym, expected)
+
+    @skipIf(not DJANGO_GTE_1_7, 'Custom lookup is only available on Django >= 1.7.')
+    def test_digest_lookup(self):
+        """Assert we can filter a digest value."""
+        expected = 'bonjour'
+        encrypted = EncryptedTextFieldModelFactory.create(digest_field=expected)
+
+        queryset = EncryptedTextFieldModel.objects.filter(digest_field__digest=expected)
+        instance = queryset.get()
+
+        self.assertTrue(instance.pk, encrypted.pk)
+
+    @skipIf(not DJANGO_GTE_1_7, 'Custom lookup is only available on Django >= 1.7.')
+    def test_hmac_lookup(self):
+        """Assert we can filter a digest value."""
+        expected = 'bonjour'
+        encrypted = EncryptedTextFieldModelFactory.create(hmac_field=expected)
+
+        queryset = EncryptedTextFieldModel.objects.filter(hmac_field__hmac=expected)
+        instance = queryset.get()
+
+        self.assertTrue(instance.pk, encrypted.pk)
