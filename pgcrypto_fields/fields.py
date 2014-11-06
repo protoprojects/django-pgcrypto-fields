@@ -3,7 +3,7 @@ from django.db import models
 from pgcrypto_fields import aggregates, DJANGO_GTE_1_7
 
 if DJANGO_GTE_1_7:
-    from django.db.models.lookups import Lookup
+    from pgcrypto_fields import lookups
 
 
 class EncryptedProxyField:
@@ -124,52 +124,12 @@ class HashedTextField(TextFieldMixin, models.TextField):
         super().__init__(*args, **kwargs)
         self.encryption_method = encryption_method
 
+    def get_lookup(self, lookup_name):
+        """Inject correct aggregate method."""
+        found = super().get_lookup(lookup_name)
+        setattr(found, 'encrypt_sql', self.encryption_method.encrypt_sql)
+        return found
+
 
 if DJANGO_GTE_1_7:
-    @HashedTextField.register_lookup
-    class DigestHashLookup(Lookup):
-        """Digest lookup to filter hashed values.
-
-        `DigestHashLookup` is hashing the value on the right hand side with
-        the 'digest' the function.
-
-        `lookup_name` is the lookup name appended to a field query.
-        """
-        lookup_name = 'digest'
-
-        def as_sql(self, qn, connection):
-            """Responsible for creating the lookup with the digest SQL.
-
-            Modify the right hand side expression to compare the value passed
-            to a digest hash.
-            """
-            lhs, lhs_params = self.process_lhs(qn, connection)
-            rhs, rhs_params = self.process_rhs(qn, connection)
-            params = lhs_params + rhs_params
-
-            rhs = aggregates.Digest.encrypt_sql % rhs
-            return '%s = %s' % (lhs, rhs), params
-
-    @HashedTextField.register_lookup
-    class HMACHashLookup(Lookup):
-        """HMAC lookup to filter hashed values.
-
-        `HMACHashLookup` is hashing the value on the right hand side with
-        the 'hmac' pgcrypto function.
-
-        `lookup_name` is the lookup name appended to a field query.
-        """
-        lookup_name = 'hmac'
-
-        def as_sql(self, qn, connection):
-            """Responsible for creating the lookup with the hmac SQL.
-
-            Modify the right hand side expression to compare the value passed
-            to a HMAC hash.
-            """
-            lhs, lhs_params = self.process_lhs(qn, connection)
-            rhs, rhs_params = self.process_rhs(qn, connection)
-            params = lhs_params + rhs_params
-
-            rhs = aggregates.HMAC.encrypt_sql % rhs
-            return '%s = %s' % (lhs, rhs), params
+    HashedTextField.register_lookup(lookups.HashLookup)

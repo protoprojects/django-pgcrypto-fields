@@ -1,4 +1,4 @@
-from unittest import skipIf
+from unittest import skipUnless
 
 from django.conf import settings
 from django.test import TestCase
@@ -108,24 +108,24 @@ class TestEncryptedTextFieldModel(TestCase):
         self.assertEqual(instance.pgp_pub_field__pgppub, expected)
         self.assertEqual(instance.pgp_sym_field__pgpsym, expected)
 
-    @skipIf(not DJANGO_GTE_1_7, 'Custom lookup is only available on Django >= 1.7.')
+    @skipUnless(DJANGO_GTE_1_7, 'Custom lookup is only available on Django >= 1.7.')
     def test_digest_lookup(self):
         """Assert we can filter a digest value."""
         expected = 'bonjour'
         encrypted = EncryptedTextFieldModelFactory.create(digest_field=expected)
 
-        queryset = EncryptedTextFieldModel.objects.filter(digest_field__digest=expected)
+        queryset = EncryptedTextFieldModel.objects.filter(digest_field__hash=expected)
         instance = queryset.get()
 
         self.assertTrue(instance.pk, encrypted.pk)
 
-    @skipIf(not DJANGO_GTE_1_7, 'Custom lookup is only available on Django >= 1.7.')
+    @skipUnless(DJANGO_GTE_1_7, 'Custom lookup is only available on Django >= 1.7.')
     def test_hmac_lookup(self):
         """Assert we can filter a digest value."""
         expected = 'bonjour'
         encrypted = EncryptedTextFieldModelFactory.create(hmac_field=expected)
 
-        queryset = EncryptedTextFieldModel.objects.filter(hmac_field__hmac=expected)
+        queryset = EncryptedTextFieldModel.objects.filter(hmac_field__hash=expected)
         instance = queryset.get()
 
         self.assertTrue(instance.pk, encrypted.pk)
