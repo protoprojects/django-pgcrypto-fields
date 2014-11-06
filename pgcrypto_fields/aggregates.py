@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.db import models
 
+from pgcrypto_fields.lookups import HashLookupBase
+
 
 class EncryptionBase(models.Aggregate):
     """Base class to add a custom aggregate method to a query."""
@@ -21,7 +23,16 @@ class EncryptionBase(models.Aggregate):
         query.aggregates[alias] = aggregate
 
 
-class Digest:
+class LookupMeta(type):
+    def __new__(cls, name, bases, namespace, **kwargs):
+        class Lookup(HashLookupBase):
+            encrypt_sql = namespace['encrypt_sql']
+
+        namespace['Lookup'] = Lookup
+        return super().__new__(cls, name, bases, namespace, **kwargs)
+
+
+class Digest(metaclass=LookupMeta):
     """Convert a value to a hash based encryption.
 
     `digest` is a pgcrypto SQL function.
@@ -33,7 +44,7 @@ class Digest:
     encrypt_sql = "digest(%s, 'sha512')"
 
 
-class HMAC:
+class HMAC(metaclass=LookupMeta):
     """Convert a value to a hash based on key and encryption.
 
     `hmac` is a pgcrypto SQL function. It works the same as `Digest` but it

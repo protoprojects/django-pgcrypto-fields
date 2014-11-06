@@ -131,9 +131,5 @@ class HashedTextField(TextFieldMixin, models.TextField):
         `get_lookup` is only available for Django >= 1.7.
         """
         if lookup_name == 'hash':
-            if self.encryption_method is aggregates.Digest:
-                return lookups.DigestLookup
-            elif self.encryption_method is aggregates.HMAC:
-                return lookups.HMACLookup
-
+            return self.encryption_method.Lookup
         return super().get_lookup(lookup_name)
