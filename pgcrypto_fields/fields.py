@@ -125,11 +125,15 @@ class HashedTextField(TextFieldMixin, models.TextField):
         self.encryption_method = encryption_method
 
     def get_lookup(self, lookup_name):
-        """Inject correct aggregate method."""
-        found = super().get_lookup(lookup_name)
-        setattr(found, 'encrypt_sql', self.encryption_method.encrypt_sql)
-        return found
+        """
+        Define hash lookup based on field's `encryption_method`.
 
+        `get_lookup` is only available for Django >= 1.7.
+        """
+        if lookup_name == 'hash':
+            if self.encryption_method is aggregates.Digest:
+                return lookups.DigestLookup
+            elif self.encryption_method is aggregates.HMAC:
+                return lookups.HMACLookup
 
-if DJANGO_GTE_1_7:
-    HashedTextField.register_lookup(lookups.HashLookup)
+        return super().get_lookup(lookup_name)

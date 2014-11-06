@@ -111,21 +111,25 @@ class TestEncryptedTextFieldModel(TestCase):
     @skipUnless(DJANGO_GTE_1_7, 'Custom lookup is only available on Django >= 1.7.')
     def test_digest_lookup(self):
         """Assert we can filter a digest value."""
-        expected = 'bonjour'
-        encrypted = EncryptedTextFieldModelFactory.create(digest_field=expected)
+        value = 'bonjour'
+        expected = EncryptedTextFieldModelFactory.create(digest_field=value)
+        EncryptedTextFieldModelFactory.create()
 
-        queryset = EncryptedTextFieldModel.objects.filter(digest_field__hash=expected)
-        instance = queryset.get()
+        queryset = EncryptedTextFieldModel.objects.filter(digest_field__hash=value)
 
-        self.assertTrue(instance.pk, encrypted.pk)
+        self.assertCountEqual(queryset, [expected])
 
     @skipUnless(DJANGO_GTE_1_7, 'Custom lookup is only available on Django >= 1.7.')
     def test_hmac_lookup(self):
         """Assert we can filter a digest value."""
-        expected = 'bonjour'
-        encrypted = EncryptedTextFieldModelFactory.create(hmac_field=expected)
+        value = 'bonjour'
+        expected = EncryptedTextFieldModelFactory.create(hmac_field=value)
+        EncryptedTextFieldModelFactory.create()
 
-        queryset = EncryptedTextFieldModel.objects.filter(hmac_field__hash=expected)
-        instance = queryset.get()
+        queryset = EncryptedTextFieldModel.objects.filter(hmac_field__hash=value)
+        self.assertCountEqual(queryset, [expected])
 
-        self.assertTrue(instance.pk, encrypted.pk)
+    def test_default_lookup(self):
+        """Assert default lookup can be called."""
+        queryset = EncryptedTextFieldModel.objects.filter(hmac_field__isnull=True)
+        self.assertFalse(queryset)
