@@ -182,3 +182,16 @@ class TestEncryptedTextFieldModel(TestCase):
 
         updated_instance = self.model.objects.get()
         self.assertEqual(updated_instance.pgp_sym_field_decrypted, expected)
+
+    def test_update_one_attribute(self):
+        """Test django bug."""
+        expected = 'bonjour'
+        instance = EncryptedTextFieldModelFactory.create(pgp_pub_field=expected)
+
+        for i in range(2):
+            instance = self.model.objects.get()
+            instance.pgp_sym_field = 'new value'
+            instance.save()
+
+        updated_instance = self.model.objects.get()
+        self.assertEqual(updated_instance.pgp_pub_field_decrypted, expected)
