@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from unittest.mock import MagicMock
+from mock import MagicMock
 
 from django.test import TestCase
 from incuna_test_utils.utils import field_names
